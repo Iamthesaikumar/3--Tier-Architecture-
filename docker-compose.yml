@@ -1,0 +1,52 @@
+
+services:
+
+  frontend:
+    build: ./Frontend
+    container_name: sai-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - sai-network
+
+  backend:
+    build: ./Backend
+    container_name: sai-backend
+    environment:
+      DB_HOST: database
+      DB_USER: saiuser
+      DB_PASSWORD: SaiDbPass123!
+      DB_NAME: saipackers
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - sai-network
+
+  database:
+    image: mysql:8.4
+    container_name: sai-database
+    environment:
+      MYSQL_ROOT_PASSWORD: RootDbPass123!
+      MYSQL_DATABASE: saipackers
+      MYSQL_USER: saiuser
+      MYSQL_PASSWORD: SaiDbPass123!
+    volumes:
+      - sai-db-data:/var/lib/mysql
+      - ./Backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pRootDbPass123!"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sai-network
+
+volumes:
+  sai-db-data:
+
+networks:
+  sai-network:
+    driver: bridge
